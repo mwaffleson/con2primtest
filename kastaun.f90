@@ -60,7 +60,7 @@ contains
 
         r_bar_sqr= r_sqr*x**2 + mu*x*(1+x)*r_dot_b**2/d**3 !(38)
 
-        q_bar= q - 0.5_dp*myb_sqr - 0.5_dp*mu**2*x**2*(r_sqr-r_dot_b**2/d**3) !(39)
+        q_bar= q - 0.5_dp*myb_sqr - 0.5_dp*mu**2*x**2*(r_sqr*myb_sqr-r_dot_b**2/d**3) !(39)
 
         v_hat_sqr=min(v0_sqr, mu**2*r_bar_sqr) !(40)
 
@@ -118,7 +118,7 @@ contains
         success=.false.
         bound_error=.false.
         maxiter=1000
-        tol=1e-14
+        tol=1e-10
 
         a=0
 
@@ -304,7 +304,7 @@ contains
 
         mu= bisection(mu_plus, myd, mytau, s_sqr, b_sqr, s_dot_b)
 
-        vi= mu/(1+mu*b_sqr)*(si/myd+mu*s_dot_b*mybi/myd**2)
+        vi= mu/(1+mu*b_sqr/myd)*(si/myd + mu*s_dot_b*mybi/myd**2)
 
         lfac=1/sqrt(1 - sum(vi**2))
 
@@ -314,7 +314,7 @@ contains
 
         !r_bar_sqr= s_sqr*x**2/d**2 + mu*x*(1+x)*s_dot_b**2 !(38)
 
-        !q_bar=  tau/d - 0.5_dp*b_sqr - 0.5_dp*mu**2*x**2*(s_sqr/d**2-s_dot_b**2/d**3) !(39)
+        !q_bar=  tau/d - 0.5_dp*b_sqr - 0.5_dp*mu**2*x**2*(s_sqr*myb_sqr/d**2-s_dot_b**2/d**3) !(39)
 
         !eps=lfac*(q_bar - mu*r_bar_sqr) + sum(vi**2)*lfac**2/(1 + lfac) !(42)
 
