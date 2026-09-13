@@ -113,6 +113,8 @@ contains
         integer :: maxiter, i
         logical :: success, bound_error
 
+
+
         success=.false.
         bound_error=.false.
         maxiter=1000
@@ -128,13 +130,7 @@ contains
 
         fa=master_function(a, d, tau, s_sqr, b_sqr, s_dot_b)
 
-        !print *, "f(a)=", fa
-
-
-
         fb=master_function(b, d, tau, s_sqr, b_sqr, s_dot_b)
-
-        !print *, "f(b)=", fb
 
         if (fa>0 .eqv. fb>0) then 
             print *, "Bounds are incorrect with fa=", fa, " and fb=",fb
@@ -146,17 +142,11 @@ contains
                 exit
             end if
 
-
             c=(b+a)/2.0_dp
-
-            fa=master_function(a, d, tau, s_sqr, b_sqr, s_dot_b)
-        
-            fb=master_function(b, d, tau, s_sqr, b_sqr, s_dot_b)
 
             fc=master_function(c, d, tau, s_sqr, b_sqr, s_dot_b)
 
-            if (abs(fc)<=tol) then
-            !if (abs((c-a)/c)<tol) then
+            if (abs((b-a)/c)<tol*mu) then
                 mu=c
                 print *, "Bisection terminated after", i, " steps with mu=",mu, "and fmu=", fc
                 success = .true.
@@ -165,13 +155,17 @@ contains
 
             if (fa>0 .and. fc>0) then
                 a=c
+                fa=fc
+
             else if(.not. fa>0 .and. .not. fc>0) then
                 a=c
-            
+                fa=fc
             else 
                 b=c
+                fb=fc
             end if
-            
+
+
         end do
 
         if (.not. success .and. .not. bound_error) then
@@ -204,7 +198,7 @@ contains
         f=mu*sqrt(h0**2+r_bar_sqr)-1
     end function aux_f
 
-    function aux_bisection(d, s_sqr, s_dot_b, b_sqr) result(mu)
+    function aux_bisection(d, s_sqr, s_dot_b, b_sqr) result(b)
         implicit none
         real(dp), intent(in) :: d
         real(dp), intent(in) :: s_sqr, b_sqr, s_dot_b
@@ -247,16 +241,12 @@ contains
 
             c=(b+a)/2.0_dp
 
-            fa=aux_f(a, d, s_sqr, b_sqr, s_dot_b)
-
-        
-            fb=aux_f(b, d, s_sqr, b_sqr, s_dot_b)
 
             fc=aux_f(c, d, s_sqr, b_sqr, s_dot_b)
 
             if (abs(fc)<=tol) then
             !if (abs((c-a)/c)<tol) then
-                mu=c+tol
+                mu=c
                 print *, "Auxilliary bisection terminated after", i, " steps with mu_plus=",mu, "and fmu_plus=", fc
                 success = .true.
                 exit
@@ -264,17 +254,18 @@ contains
 
             if (fa>0 .and. fc>0) then
                 a=c
+                fa=fc
             else if(.not. fa>0 .and. .not. fc>0) then
                 a=c
-            
+                fa=fc
             else 
                 b=c
+                fb=fc
             end if
             
         end do
 
         if (.not. success .and. .not. bound_error) then
-            mu=c+tol
             print *, "Auxilliary bisection did not converge after", i, "steps with mu_plus=",mu, "and fmu=", fc
         end if
     
