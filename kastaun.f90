@@ -70,17 +70,14 @@ contains
 
         
         if (rho_hat<0) then
-            !print*, "rho:", rho_hat
+
             rho_hat=0
         end if
 
         eps_hat=w_hat*(q_bar - mu*r_bar_sqr) + v_hat_sqr*w_hat**2/(1 + w_hat) !(42)
 
-        !eps_hat=w_hat*(q_bar - mu*r_bar_sqr*(1.0_dp - mu*w_hat/(1+w_hat)))
-
         !add a limiter for valid eps and rho
         if (eps_hat<0) then
-            !print*, "eps:",eps_hat
             eps_hat=0
         end if
 
@@ -133,7 +130,6 @@ contains
         fb=master_function(b, d, tau, s_sqr, b_sqr, s_dot_b)
 
         if (fa>0 .eqv. fb>0) then 
-            print *, "Bounds are incorrect with fa=", fa, " and fb=",fb
             bound_error=.true.
         end if
 
@@ -148,7 +144,6 @@ contains
 
             if (abs((b-a)/c)<tol*mu) then
                 mu=c
-                print *, "Bisection terminated after", i, " steps with mu=",mu, "and fmu=", fc
                 success = .true.
                 exit
             end if
@@ -170,7 +165,6 @@ contains
 
         if (.not. success .and. .not. bound_error) then
             mu=c
-            print *, "Bisection did not converge after", i, "steps with mu=",mu, "and fmu=", fc
         end if
     
     end function bisection
@@ -220,16 +214,9 @@ contains
 
         fa=aux_f(a, d, s_sqr, b_sqr, s_dot_b)
 
-        !print *, "f(a)=", fa
-
-
-
         fb=aux_f(b, d, s_sqr, b_sqr, s_dot_b)
 
-        !print *, "f(b)=", fb
-
         if (fa>0 .eqv. fb>0) then 
-            print *, "Auxilliary bounds are incorrect with fa=", fa, " and fb=",fb
             bound_error=.true.
         end if
 
@@ -245,9 +232,7 @@ contains
             fc=aux_f(c, d, s_sqr, b_sqr, s_dot_b)
 
             if (abs(fc)<=tol) then
-            !if (abs((c-a)/c)<tol) then
                 mu=c
-                print *, "Auxilliary bisection terminated after", i, " steps with mu_plus=",mu, "and fmu_plus=", fc
                 success = .true.
                 exit
             end if
@@ -266,7 +251,6 @@ contains
         end do
 
         if (.not. success .and. .not. bound_error) then
-            print *, "Auxilliary bisection did not converge after", i, "steps with mu_plus=",mu, "and fmu=", fc
         end if
     
     end function aux_bisection
@@ -323,45 +307,5 @@ contains
         !h = 1 + eps + p/rho
 
     end subroutine
-
-    subroutine bound_test(vi, lfac, d, tau, si, bi)
-        implicit none
-        real(dp), intent(out) :: lfac
-        real(dp), intent(out) :: vi(3)
-        real(dp), intent(in)  :: d, tau
-        real(dp), intent(in)  :: si(3), bi(3)
-        real(dp)              :: myd, mytau
-        real(dp)              :: mysi(3), mybi(3)
-        real(dp)              :: s_sqr, b_sqr, s_dot_b
-        real(dp)              :: mu, mu_plus
-        integer :: tests, print_freq, i
-        real(dp) :: freq
-
-        myd=d
-        mytau=tau
-        mysi=si
-        mybi=bi
-
-        call preprocessing(mysi, mybi, s_sqr, b_sqr, s_dot_b)
-
-        if (s_sqr/myd**2<h0**2) then
-            mu_plus=0.0_dp
-        else
-            mu_plus=aux_bisection(myd, s_sqr, s_dot_b, b_sqr)
-            !mu_plus=1/h0
-        end if
-
-        tests=200
-        print_freq=10
-        freq=1e-6
-        mu_plus=mu_plus-tests/2*freq
-        do i=-tests, tests
-            print *, mu_plus," ", master_function(mu_plus, d, tau, s_sqr, b_sqr, s_dot_b)
-            mu_plus=freq + mu_plus
-        end do
-
-
-
-    end subroutine bound_test
 
 end module kastaun
