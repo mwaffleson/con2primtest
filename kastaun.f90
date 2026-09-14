@@ -2,7 +2,7 @@ module kastaun
 
 use iso_fortran_env, only: dp => real64
 implicit none
-real(dp), parameter :: h0=1+1e-7
+real(dp), parameter :: h0=1+1e-7_dp
 
 
 
