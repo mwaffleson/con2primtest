@@ -31,35 +31,35 @@ epss(:)=0.5
 vs=0
 bs=0
 
-! vs(:,1)=0.1_dp
-! test_names(1)="Default"
+vs(:,1)=0.1_dp
+test_names(1)="Default"
 
 
-! vs(2,:)=[0.0_dp, 0.0_dp, 0.3_dp]
-! test_names(2)="0.3 v"
+vs(2,:)=[0.0_dp, 0.0_dp, 0.3_dp]
+test_names(2)="0.3 v"
 
-! vs(3,:)=[-0.05_dp, 0.2_dp, 0.1_dp]
-! test_names(3)="mixed v"
+vs(3,:)=[-0.05_dp, 0.2_dp, 0.1_dp]
+test_names(3)="mixed v"
 
-! bs(4,:)=[20, 0, 0]
-! test_names(4)="Big B"
+bs(4,:)=[20, 0, 0]
+test_names(4)="Big B"
 
-! vs(5,:)=[0.45_dp, 0.0_dp, 0.0_dp]
-! test_names(5)="0.45 v"
+vs(5,:)=[0.45_dp, 0.0_dp, 0.0_dp]
+test_names(5)="0.45 v"
 
-! vs(6,:)=[0.0_dp, 0.0_dp, 0.0_dp]
-! test_names(6)="0 v"
+vs(6,:)=[0.0_dp, 0.0_dp, 0.0_dp]
+test_names(6)="0 v"
 
-! rhos(7)=100
-! bs(7,:)=[2, 0, 0]
-! test_names(7)="big rho"
+rhos(7)=100
+bs(7,:)=[2, 0, 0]
+test_names(7)="big rho"
 
-! vs(8,:)= [0.6_dp, 0.0_dp, 0.0_dp]
-! test_names(8)= "big v"
+vs(8,:)= [0.6_dp, 0.0_dp, 0.0_dp]
+test_names(8)= "big v"
 
-do i=1, tests-1
-    vs(i,:)= [i*0.1_dp, 0.0_dp, 0.0_dp]
-end do
+! do i=1, tests-1
+!     vs(i,:)= [i*0.1_dp, 0.0_dp, 0.0_dp]
+! end do
 
 
 
@@ -84,7 +84,7 @@ do i=1, tests
     tau=rho * h *lfac_in**2- p+ 0.5*sum(bi**2)* (1+sum(v_in**2))- 0.5*dot_product(bi,v_in) - d
 
 
-    call con2prim(v_out, lfac_out, d, tau, si, bi)
+    call con2prim_e(v_out, lfac_out, d, tau, si, bi)
     !call bound_test(v_out, lfac_out, d, tau, si, bi)
 
     print *, "Rho=", rho, " Epsilon=", eps

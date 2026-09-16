@@ -231,8 +231,8 @@ contains
 
             fc=aux_f(c, d, s_sqr, b_sqr, s_dot_b)
 
-            if (abs(fc)<=tol) then
-                mu=c
+            if (abs((b-a)/c)<tol*mu) then
+                b=b
                 success = .true.
                 exit
             end if
@@ -255,11 +255,9 @@ contains
     
     end function aux_bisection
 
-
     subroutine con2prim(vi, lfac, d, tau, si, bi)
         implicit none
         real(dp), intent(out) :: lfac
-        !real(dp), intent(out) ::rho, eps, p, h
         real(dp), intent(out) :: vi(3)
         real(dp), intent(in)  :: d, tau
         real(dp), intent(in)  :: si(3), bi(3)
@@ -267,8 +265,6 @@ contains
         real(dp)              :: mysi(3), mybi(3)
         real(dp)              :: s_sqr, b_sqr, s_dot_b
         real(dp)              :: mu, mu_plus
-        !real(dp)              :: q_bar, r_bar_sqr
-        !real(dp)              :: x
         
 
         myd=d
@@ -281,7 +277,6 @@ contains
             mu_plus=0.0_dp
         else
             mu_plus=aux_bisection(myd, s_sqr, s_dot_b, b_sqr)
-            !mu_plus=1/h0
         end if
         
 
@@ -292,20 +287,62 @@ contains
 
         lfac=1/sqrt(1 - sum(vi**2))
 
-        !rho=d/lfac
+    end subroutine
 
-        !x=1.0_dp/(1.0_dp + mu*b_sqr) !(26)
 
-        !r_bar_sqr= s_sqr*x**2/d**2 + mu*x*(1+x)*s_dot_b**2 !(38)
+    subroutine con2prim_extras(vi, lfac, d, tau, si, bi, rho, eps, p, h)
+        implicit none
+        real(dp), intent(out) :: lfac
+        real(dp), intent(out) ::rho, eps, p, h
+        real(dp), intent(out) :: vi(3)
+        real(dp), intent(in)  :: d, tau
+        real(dp), intent(in)  :: si(3), bi(3)
+        real(dp)              :: myd, mytau
+        real(dp)              :: mysi(3), mybi(3)
+        real(dp)              :: s_sqr, b_sqr, s_dot_b
+        real(dp)              :: mu, mu_plus
+        real(dp)              :: q_bar, r_bar_sqr
+        real(dp)              :: x
+        
 
-        !q_bar=  tau/d - 0.5_dp*b_sqr - 0.5_dp*mu**2*x**2*(s_sqr*myb_sqr/d**2-s_dot_b**2/d**3) !(39)
+        myd=d
+        mytau=tau
+        mysi=si
+        mybi=bi
 
-        !eps=lfac*(q_bar - mu*r_bar_sqr) + sum(vi**2)*lfac**2/(1 + lfac) !(42)
+        call preprocessing(mysi, mybi, s_sqr, b_sqr, s_dot_b)
 
-        !p=ideal_eos(eps,rho)
+        if (s_sqr/myd**2<h0**2 + 1e-7_dp) then
+        !if  (.false.) then
+            mu_plus=0.0_dp
+        else
+            mu_plus=aux_bisection(myd, s_sqr, s_dot_b, b_sqr)
+        end if
+        
 
-        !h = 1 + eps + p/rho
+
+        mu= bisection(mu_plus, myd, mytau, s_sqr, b_sqr, s_dot_b)
+
+        vi= mu/(1+mu*b_sqr/myd)*(si/myd + mu*s_dot_b*mybi/myd**2)
+
+        lfac=1/sqrt(1 - sum(vi**2))
+
+        rho=d/lfac
+
+        x=1.0_dp/(1.0_dp + mu*b_sqr/d) !(26)
+
+        r_bar_sqr= s_sqr*x**2/d**2 + mu * x * (1+x) * s_dot_b**2/d**3 !(38)
+
+        q_bar=  tau/d - 0.5_dp*b_sqr/d - 0.5_dp* mu**2 * x**2 * (s_sqr*b_sqr/d**3-s_dot_b**2/d**3) !(39)
+
+        eps=lfac*(q_bar - mu*r_bar_sqr) + sum(vi**2)*lfac**2/(1 + lfac) !(42)
+
+        p=ideal_eos(eps,rho)
+
+        h = 1 + eps + p/rho
 
     end subroutine
+
+    
 
 end module kastaun
