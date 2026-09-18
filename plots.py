@@ -11,30 +11,49 @@ import matplotlib.pyplot as plt
 
 
 
-eps=np.finfo(float).eps
-
 
 data=np.genfromtxt("data.txt")
 
 
 
-# plt.xscale("log")
-# plt.yscale("log")
+
 steps=1000
 
-data=data.reshape((steps,steps,3))
+
+
+
+data=data.reshape((steps,steps,data.shape[1]))
 
 # %%
 
-# plt.xlim((data[0,0],data[0,-1]))
-# plt.ylim((data[1,0],data[1,-1]))
+plt.style.use('dark_background')
 
 
 
 
-plt.pcolormesh(data[:,:,0],data[:,:,1],(data[:,:,2]),shading="nearest", norm="log")
+plt.pcolormesh(data[:,:,0],data[:,:,1],data[:,:,2],shading="nearest", norm="log")
 plt.colorbar()
 plt.xlabel("$log_{10}$(z)")
 plt.ylabel("$log_{10}(\epsilon)$")
 
 plt.show()
+
+plt.xlabel("$log_{10}$(z)")
+plt.ylabel("$log_{10}(\epsilon)$")
+plt.pcolormesh(data[:,:,0],data[:,:,1],data[:,:,4],shading="nearest")
+plt.colorbar()
+plt.show()
+
+
+plt.xlabel("$log_{10}$(z)")
+plt.ylabel("$log_{10}(\epsilon)$")
+plt.pcolormesh(data[:,:,0],data[:,:,1],data[:,:,5],shading="nearest")
+plt.colorbar()
+plt.show()
+
+
+
+
+
+
+

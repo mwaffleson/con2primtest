@@ -17,22 +17,27 @@ program con2prim_plots
     real(dp) :: x, y
     integer  :: steps
     integer  :: i, j
-    real(dp) :: p_out, p_err, eps_out
+    real(dp) :: p_out, p_err, eps_out, rho_out
+    logical :: success
+    integer :: success_out, iter, aux_iter
+    real(dp) :: mu, mu_plus
 
 
 
     open(newunit=io, file="data.txt")
     !write(io, :) x_min, x_max, logsteps_x, y_min, y_max, logsteps_y
 
-    !rho=6e12
     rho=1
-    bi=[20, 0, 0]
+    !rho=1
+    bi=[0, 0, 0]
 
     logx_max=3
     logx_min=-2
 
-    logy_max=1
+
+    logy_max=1.5
     logy_min=-4
+
 
     steps= 1000
     
@@ -64,13 +69,19 @@ program con2prim_plots
 
             tau=rho * h * lfac_in**2- p+ 0.5*sum(bi**2)* (1+sum(v_in**2))- 0.5*dot_product(bi,v_in)**2 - d
 
-            call con2prim_extras(v_out, lfac_out, d, tau, si, bi, rho, eps_out, p_out, h)
+            call con2prim(v_out, lfac_out, d, tau, si, bi, rho_out, eps_out,  p_out, h, success, iter, aux_iter, mu=mu, mu_plus=mu_plus)
 
             p_err=abs(p-p_out)/p
 
             !p_err=abs(p-p_out)
+            if (success) then
+                success_out=1
+            else
+                success_out=0
+            end if
 
-            write(io,*) x, y, p_err
+
+            write(io,*) x, y, p_err, success_out, iter, aux_iter
 
             y=y + logsteps_y
 
@@ -79,7 +90,6 @@ program con2prim_plots
         y=logy_min
         print*, i*100/steps,"% done"
         
-        !print*, p_out, v_in
         x=x + logsteps_x
     end do
     

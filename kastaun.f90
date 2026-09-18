@@ -98,24 +98,26 @@ contains
     end function master_function
         
     !bisection algorithm to find roots of f
-    function bisection(mu_plus, d, tau, s_sqr, b_sqr, s_dot_b) result(mu)
+    function bisection(mu_plus, d, tau, s_sqr, b_sqr, s_dot_b, success, iter) result(mu)
         implicit none
         real(dp), intent(in) :: d, tau
         real(dp), intent(in) :: s_sqr, b_sqr, s_dot_b
         real(dp), intent(in) :: mu_plus
+        logical, intent(out), optional :: success
+        integer, intent(out), optional :: iter
         real(dp) :: mu
         real(dp) :: a, b, c
         real(dp) :: fa, fb, fc
         real(dp) :: tol
         integer :: maxiter, i
-        logical :: success, bound_error
+        logical :: bound_error
 
 
 
         success=.false.
         bound_error=.false.
-        maxiter=1000
-        tol=1e-10
+        maxiter=100
+        tol=1e-15
 
         a=0
 
@@ -142,9 +144,10 @@ contains
 
             fc=master_function(c, d, tau, s_sqr, b_sqr, s_dot_b)
 
-            if (abs((b-a)/c)<tol*mu) then
+            if (abs((b-a)/c)<tol) then
                 mu=c
                 success = .true.
+                iter=i
                 exit
             end if
 
@@ -169,7 +172,7 @@ contains
     
     end function bisection
 
-    function aux_f(mu, d, s_sqr, s_dot_b, b_sqr) result(f)
+    function aux_f(mu, d, s_sqr, b_sqr, s_dot_b) result(f)
         implicit none
         real(dp), intent(in) :: mu
         real(dp), intent(in) :: d, s_sqr, s_dot_b, b_sqr
@@ -187,16 +190,16 @@ contains
 
         x=1/(1+mu*myb_sqr)
 
-        r_bar_sqr= r_sqr*x**2 + mu*x*(1+x)*r_dot_b**2/myd**3 !(38)
+        r_bar_sqr= r_sqr*x**2 + mu*x* (1+x) *r_dot_b**2/myd**3 !(38)
 
         f=mu*sqrt(h0**2+r_bar_sqr)-1
     end function aux_f
 
-    function aux_bisection(d, s_sqr, s_dot_b, b_sqr) result(b)
+    function aux_bisection(d, s_sqr, b_sqr, s_dot_b, aux_iter) result(b)
         implicit none
         real(dp), intent(in) :: d
         real(dp), intent(in) :: s_sqr, b_sqr, s_dot_b
-        real(dp) :: mu
+        integer, intent(out), optional :: aux_iter
         real(dp) :: a, b, c
         real(dp) :: fa, fb, fc
         real(dp) :: tol
@@ -206,7 +209,7 @@ contains
         success=.false.
         bound_error=.false.
         maxiter=1000
-        tol=1e-7
+        tol=1e-10
 
         a=0
 
@@ -231,9 +234,10 @@ contains
 
             fc=aux_f(c, d, s_sqr, b_sqr, s_dot_b)
 
-            if (abs((b-a)/c)<tol*mu) then
+            if (abs((b-a)/c)<tol) then
                 b=b
                 success = .true.
+                aux_iter= i
                 exit
             end if
 
@@ -255,52 +259,21 @@ contains
     
     end function aux_bisection
 
-    subroutine con2prim(vi, lfac, d, tau, si, bi)
+
+
+    subroutine con2prim(vi, lfac, d, tau, si, bi, rho, eps, p, h, success, iter, aux_iter, mu, mu_plus)
         implicit none
         real(dp), intent(out) :: lfac
+        real(dp), intent(out), optional:: rho, eps, p, h
+        logical, intent(out), optional :: success
+        integer, intent(out), optional :: iter, aux_iter
         real(dp), intent(out) :: vi(3)
         real(dp), intent(in)  :: d, tau
         real(dp), intent(in)  :: si(3), bi(3)
         real(dp)              :: myd, mytau
         real(dp)              :: mysi(3), mybi(3)
         real(dp)              :: s_sqr, b_sqr, s_dot_b
-        real(dp)              :: mu, mu_plus
-        
-
-        myd=d
-        mytau=tau
-        mysi=si
-        mybi=bi
-        call preprocessing(mysi, mybi, s_sqr, b_sqr, s_dot_b)
-
-        if (s_sqr/myd**2<h0**2) then
-            mu_plus=0.0_dp
-        else
-            mu_plus=aux_bisection(myd, s_sqr, s_dot_b, b_sqr)
-        end if
-        
-
-
-        mu= bisection(mu_plus, myd, mytau, s_sqr, b_sqr, s_dot_b)
-
-        vi= mu/(1+mu*b_sqr/myd)*(si/myd + mu*s_dot_b*mybi/myd**2)
-
-        lfac=1/sqrt(1 - sum(vi**2))
-
-    end subroutine
-
-
-    subroutine con2prim_extras(vi, lfac, d, tau, si, bi, rho, eps, p, h)
-        implicit none
-        real(dp), intent(out) :: lfac
-        real(dp), intent(out) ::rho, eps, p, h
-        real(dp), intent(out) :: vi(3)
-        real(dp), intent(in)  :: d, tau
-        real(dp), intent(in)  :: si(3), bi(3)
-        real(dp)              :: myd, mytau
-        real(dp)              :: mysi(3), mybi(3)
-        real(dp)              :: s_sqr, b_sqr, s_dot_b
-        real(dp)              :: mu, mu_plus
+        real(dp), intent(out), optional:: mu, mu_plus
         real(dp)              :: q_bar, r_bar_sqr
         real(dp)              :: x
         
@@ -310,39 +283,61 @@ contains
         mysi=si
         mybi=bi
 
+        aux_iter=0
+
         call preprocessing(mysi, mybi, s_sqr, b_sqr, s_dot_b)
 
-        if (s_sqr/myd**2<h0**2 + 1e-7_dp) then
-        !if  (.false.) then
+
+
+        if (s_sqr/myd**2<=h0**2) then
             mu_plus=0.0_dp
+        elseif (present(aux_iter)) then
+            mu_plus=aux_bisection(myd, s_sqr, b_sqr, s_dot_b, aux_iter)
         else
-            mu_plus=aux_bisection(myd, s_sqr, s_dot_b, b_sqr)
+            mu_plus=aux_bisection(myd, s_sqr, b_sqr, s_dot_b)
+        end if
+
+        if (present(success) .and. present(iter)) then
+            mu= bisection(mu_plus, myd, mytau, s_sqr, b_sqr, s_dot_b, success, iter)
+        else
+            mu= bisection(mu_plus, myd, mytau, s_sqr, b_sqr, s_dot_b)
         end if
         
-
-
-        mu= bisection(mu_plus, myd, mytau, s_sqr, b_sqr, s_dot_b)
-
         vi= mu/(1+mu*b_sqr/myd)*(si/myd + mu*s_dot_b*mybi/myd**2)
 
         lfac=1/sqrt(1 - sum(vi**2))
 
-        rho=d/lfac
+        if (present(eps)) then
 
-        x=1.0_dp/(1.0_dp + mu*b_sqr/d) !(26)
+            x=1.0_dp/(1.0_dp + mu*b_sqr/d) !(26)
 
-        r_bar_sqr= s_sqr*x**2/d**2 + mu * x * (1+x) * s_dot_b**2/d**3 !(38)
+            r_bar_sqr= s_sqr*x**2/d**2 + mu * x * (1+x) * s_dot_b**2/d**3 !(38)
 
-        q_bar=  tau/d - 0.5_dp*b_sqr/d - 0.5_dp* mu**2 * x**2 * (s_sqr*b_sqr/d**3-s_dot_b**2/d**3) !(39)
+            q_bar=  tau/d - 0.5_dp*b_sqr/d - 0.5_dp* mu**2 * x**2 * (s_sqr*b_sqr/d**3-s_dot_b**2/d**3) !(39)
 
-        eps=lfac*(q_bar - mu*r_bar_sqr) + sum(vi**2)*lfac**2/(1 + lfac) !(42)
+            eps=lfac*(q_bar - mu*r_bar_sqr) + sum(vi**2)*lfac**2/(1 + lfac) !(42)
 
-        p=ideal_eos(eps,rho)
+            if (present(rho)) then
+                rho=d/lfac
 
-        h = 1 + eps + p/rho
+                if (present(p)) then
+                    p=ideal_eos(eps,rho)
+
+                    if (present(h)) then
+                        h = 1 + eps + p/rho
+                        
+                    end if
+            end if
+        end if
+    end if
+
+
 
     end subroutine
 
     
 
 end module kastaun
+
+
+
