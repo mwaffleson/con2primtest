@@ -29,7 +29,7 @@ program con2prim_plots
 
     rho=1
     !rho=1
-    bi=[0, 0, 0]
+    bi=[0, 10, 0]
 
     logx_max=3
     logx_min=-2
@@ -69,7 +69,7 @@ program con2prim_plots
 
             tau=rho * h * lfac_in**2- p+ 0.5*sum(bi**2)* (1+sum(v_in**2))- 0.5*dot_product(bi,v_in)**2 - d
 
-            call con2prim(v_out, lfac_out, d, tau, si, bi, rho_out, eps_out,  p_out, h, success, iter, aux_iter, mu=mu, mu_plus=mu_plus)
+            call con2prim(v_out, lfac_out, d, tau, si, bi, rho_out, eps_out,  p_out, h, iter, aux_iter, mu=mu, mu_plus=mu_plus)
 
             p_err=abs(p-p_out)/p
 
