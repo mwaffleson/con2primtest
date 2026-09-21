@@ -51,7 +51,7 @@ contains
 
 
         calls=0
-        delta=1e-1_dp
+        delta = 2.0_dp * epsilon(1.0_dp) * abs(b) + 0.5_dp * tol
         bound_error=.false.
         maxiter=100
 
@@ -91,7 +91,7 @@ contains
                 s = b-fb*(b-a)/(fb-fa)
             end if
 
-            if ((3*a+b)/4<s .or. s<b) then
+            if (.not. ( min((3.0_dp*a+b)/4.0_dp, b) < s .and. s < max((3.0_dp*a+b)/4.0_dp, b) ) ) then
                 s=(a+b)/2
                 mflag=.true.
             elseif (mflag) then
@@ -132,6 +132,12 @@ contains
                 exit
             end if
 
+            if (abs(fa) < abs(fb)) then
+            call swap(a, b)
+            call swap(fa, fb)
+            end if
+            delta = 2.0_dp * epsilon(1.0_dp) * abs(b) + 0.5_dp * tol
+
         end do
 
 
@@ -154,7 +160,7 @@ contains
         !real(dp), intent(in) :: d, tau
         !real(dp), intent(in) :: s_sqr, b_sqr, s_dot_b
         real(dp), intent(in) :: mu_plus
-!        logical, intent(out), optional :: success
+        !logical, intent(out), optional :: success
         integer, intent(out), optional :: iter
         real(dp), intent(in) :: params(:)
         real(dp) :: mu
@@ -221,7 +227,7 @@ contains
     end function ${name}$
     #:enddef
 
-
+    $:bisection_template("bisection", "master_function")
     $:bisection_template("aux_bisection", "aux_f")
 
 
@@ -360,69 +366,6 @@ contains
         f=mu*sqrt(h0**2+r_bar_sqr)-1
     end function aux_f
 
-    ! function aux_bisection(d, s_sqr, b_sqr, s_dot_b, aux_iter) result(b)
-    !     implicit none
-    !     real(dp), intent(in) :: d
-    !     real(dp), intent(in) :: s_sqr, b_sqr, s_dot_b
-    !     integer, intent(out), optional :: aux_iter
-    !     real(dp) :: a, b, c
-    !     real(dp) :: fa, fb, fc
-    !     real(dp) :: tol
-    !     integer :: maxiter, i
-    !     logical :: success, bound_error
-
-    !     success=.false.
-    !     bound_error=.false.
-    !     maxiter=1000
-    !     tol=1e-10
-
-    !     a=0
-
-    !     b=1/h0
-
-    !     fa=aux_f(a, d, s_sqr, b_sqr, s_dot_b)
-
-    !     fb=aux_f(b, d, s_sqr, b_sqr, s_dot_b)
-
-    !     if (fa>0 .eqv. fb>0) then 
-    !         bound_error=.true.
-    !     end if
-
-    !     do i=1, maxiter
-    !         if (bound_error) then
-    !             exit
-    !         end if
-
-
-    !         c=(b+a)/2.0_dp
-
-
-    !         fc=aux_f(c, d, s_sqr, b_sqr, s_dot_b)
-
-    !         if (abs((b-a)/c)<tol) then
-    !             b=b
-    !             success = .true.
-    !             aux_iter= i
-    !             exit
-    !         end if
-
-    !         if (fa>0 .and. fc>0) then
-    !             a=c
-    !             fa=fc
-    !         else if(.not. fa>0 .and. .not. fc>0) then
-    !             a=c
-    !             fa=fc
-    !         else 
-    !             b=c
-    !             fb=fc
-    !         end if
-            
-    !     end do
-
-    !     if (.not. success .and. .not. bound_error) then
-    !     end if
-    
-    ! end function aux_bisection
 
     #:def con2prim_template(name, solver, aux_solver)
     subroutine ${name}$(vi, lfac, d, tau, si, bi, rho, eps, p, h, iter, aux_iter, mu, mu_plus)
@@ -499,7 +442,7 @@ contains
     end subroutine ${name}$
     #:enddef 
 
-    $:con2prim_template("con2prim", "brent", "aux_bisection")
+    $:con2prim_template("con2prim", "brent", "aux_brent")
 
     
 
